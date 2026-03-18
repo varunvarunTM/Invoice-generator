@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>InvoiceApp</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink: #0f0e0d;
+  --paper: #faf8f4;
+  --cream: #f2ede4;
+  --gold: #b8892a;
+  --gold-light: #e8c96a;
+  --rust: #c0392b;
+  --sage: #4a7c59;
+  --muted: #8a7f72;
+  --border: #ddd5c8;
+  --shadow: 0 2px 16px rgba(15,14,13,0.08);
+  --shadow-lg: 0 8px 40px rgba(15,14,13,0.14);
+  --radius: 4px;
+  --font-display: 'Playfair Display', serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+}
+
+body { font-family: var(--font-body); background: var(--paper); color: var(--ink); }
+.app { min-height: 100vh; display: flex; flex-direction: column; }
+
+.topbar {
+  background: var(--ink); color: var(--paper);
+  padding: 0 28px; height: 54px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,.3);
+}
+.topbar-brand { font-family: var(--font-display); font-size: 1.25rem; letter-spacing: .02em; color: var(--gold-light); }
+.topbar-right { display: flex; gap: 12px; align-items: center; font-size: .8rem; }
+.badge { background: var(--sage); color: white; padding: 2px 10px; border-radius: 99px; font-size: .7rem; font-weight: 600; }
+.badge.warn { background: var(--gold); }
+.badge.danger { background: var(--rust); }
+
+.layout { display: flex; flex: 1; }
+.sidebar {
+  width: 220px; min-height: calc(100vh - 54px);
+  background: #1a1916; padding: 24px 0;
+  display: flex; flex-direction: column; gap: 2px;
+  position: sticky; top: 54px; height: calc(100vh - 54px); overflow-y: auto;
+}
+.nav-section { font-size: .65rem; font-family: var(--font-mono); color: #555; padding: 16px 20px 6px; letter-spacing: .1em; text-transform: uppercase; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 20px; cursor: pointer;
+  color: #aaa; font-size: .85rem; font-weight: 500;
+  border-left: 3px solid transparent; transition: all .15s;
+}
+.nav-item:hover { color: var(--paper); background: rgba(255,255,255,.05); }
+.nav-item.active { color: var(--gold-light); border-left-color: var(--gold); background: rgba(184,137,42,.08); }
+.nav-icon { font-size: 1rem; width: 18px; text-align: center; }
+
+.main { flex: 1; padding: 32px; max-width: 1100px; }
+.page-title { font-family: var(--font-display); font-size: 1.9rem; margin-bottom: 4px; }
+.page-sub { color: var(--muted); font-size: .85rem; margin-bottom: 28px; }
+
+.card { background: white; border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px; }
+.card + .card { margin-top: 20px; }
+.card-title { font-family: var(--font-display); font-size: 1.1rem; margin-bottom: 16px; color: var(--ink); }
+
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.stat-card {
+  background: white; border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 18px 22px; box-shadow: var(--shadow); border-top: 3px solid var(--gold);
+}
+.stat-val { font-family: var(--font-display); font-size: 1.8rem; color: var(--ink); }
+.stat-lbl { font-size: .75rem; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: .05em; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 20px; border-radius: var(--radius);
+  font-family: var(--font-body); font-size: .85rem; font-weight: 600;
+  cursor: pointer; border: none; transition: all .15s;
+}
+.btn-primary { background: var(--ink); color: var(--paper); }
+.btn-primary:hover { background: #2a2826; }
+.btn-gold { background: var(--gold); color: white; }
+.btn-gold:hover { background: #a07620; }
+.btn-outline { background: transparent; color: var(--ink); border: 1.5px solid var(--border); }
+.btn-outline:hover { border-color: var(--ink); }
+.btn-danger { background: var(--rust); color: white; }
+.btn-sm { padding: 6px 14px; font-size: .78rem; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-full { grid-column: 1 / -1; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-label { font-size: .78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.form-input {
+  padding: 9px 12px; border: 1.5px solid var(--border); border-radius: var(--radius);
+  font-family: var(--font-body); font-size: .9rem; background: var(--paper);
+  transition: border-color .15s; outline: none;
+}
+.form-input:focus { border-color: var(--gold); }
+textarea.form-input { resize: vertical; min-height: 80px; }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+th { background: var(--cream); font-weight: 600; text-align: left; padding: 10px 14px; border-bottom: 2px solid var(--border); font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+td { padding: 11px 14px; border-bottom: 1px solid var(--border); }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #fdf9f2; }
+
+.license-page {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: var(--ink);
+  background-image: radial-gradient(ellipse at 20% 50%, rgba(184,137,42,.15) 0%, transparent 60%),
+                    radial-gradient(ellipse at 80% 20%, rgba(184,137,42,.08) 0%, transparent 50%);
+}
+.license-box {
+  background: var(--paper); border: 1px solid var(--border);
+  border-radius: 8px; padding: 48px 52px; width: 460px;
+  box-shadow: var(--shadow-lg);
+}
+.license-brand { font-family: var(--font-display); font-size: 2rem; color: var(--gold); text-align: center; margin-bottom: 4px; }
+.license-tagline { font-size: .8rem; color: var(--muted); text-align: center; margin-bottom: 32px; font-family: var(--font-mono); }
+.license-divider { height: 1px; background: var(--border); margin: 24px 0; }
+.error-msg { background: #fef2f2; border: 1px solid #fecaca; color: var(--rust); padding: 10px 14px; border-radius: var(--radius); font-size: .85rem; margin-top: 12px; }
+.success-msg { background: #f0fdf4; border: 1px solid #86efac; color: var(--sage); padding: 10px 14px; border-radius: var(--radius); font-size: .85rem; margin-top: 12px; }
+.spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.3); border-top-color: white; border-radius: 50%; animation: spin .6s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.invoice-preview { background: white; padding: 40px 48px; border: 1px solid var(--border); font-size: .88rem; line-height: 1.6; }
+.inv-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; }
+.inv-logo { font-family: var(--font-display); font-size: 1.6rem; color: var(--gold); }
+.inv-parties { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 32px; }
+.inv-party-lbl { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 6px; }
+.inv-party-name { font-weight: 700; font-size: 1rem; }
+.inv-items-table th { background: var(--ink); color: var(--paper); }
+.inv-total-section { margin-top: 16px; display: flex; justify-content: flex-end; }
+.inv-totals { width: 260px; }
+.inv-totals tr td:first-child { color: var(--muted); }
+.inv-totals tr td:last-child { text-align: right; font-weight: 600; }
+.inv-grand { font-family: var(--font-display); font-size: 1.1rem; color: var(--gold); }
+.inv-terms { margin-top: 32px; border-top: 1px solid var(--border); padding-top: 20px; font-size: .8rem; color: var(--muted); }
+
+.profile-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.profile-card {
+  background: white; border: 1.5px solid var(--border); border-radius: var(--radius);
+  padding: 20px; cursor: pointer; transition: all .15s;
+}
+.profile-card:hover { border-color: var(--gold); box-shadow: var(--shadow); }
+.profile-card.selected { border-color: var(--gold); background: #fffbf2; }
+.profile-name { font-family: var(--font-display); font-size: 1.1rem; margin-bottom: 4px; }
+.profile-email { font-size: .8rem; color: var(--muted); }
+
+.flex-row { display: flex; align-items: center; gap: 12px; }
+.flex-between { display: flex; align-items: center; justify-content: space-between; }
+.mt-4 { margin-top: 16px; }
+.mt-6 { margin-top: 24px; }
+.mb-4 { margin-bottom: 16px; }
+.gap-8 { gap: 8px; }
+.text-muted { color: var(--muted); font-size: .85rem; }
+.text-gold { color: var(--gold); }
+.text-mono { font-family: var(--font-mono); }
+.pill { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: .72rem; font-weight: 600; }
+.pill-green { background: #dcfce7; color: #166534; }
+.pill-red { background: #fee2e2; color: #991b1b; }
+.pill-yellow { background: #fef9c3; color: #713f12; }
+
+@media print {
+  .topbar, .sidebar, .no-print { display: none !important; }
+  .main { padding: 0; }
+  .invoice-preview { border: none; padding: 0; }
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+// ─── Storage helpers ──────────────────────────────────────────────────────────
+const storage = {
+  get: (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+  set: (k, v) => localStorage.setItem(k, JSON.stringify(v)),
+  remove: (k) => localStorage.removeItem(k),
+};
+
+const formatDate = (d) => new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+const today = () => new Date().toISOString().split("T")[0];
+
+// ─── Mock license backend ─────────────────────────────────────────────────────
+const MOCK_LICENSES = {
+  "SPARSH-3M-001": { validity_months: 3 },
+  "SPARSH-6M-001": { validity_months: 6 },
+  "SPARSH-12M-001": { validity_months: 12 },
+  "DEMO-KEY-2024": { validity_months: 1 },
+};
+
+const verifyLicense = async (key) => {
+  await new Promise(r => setTimeout(r, 1200));
+  const lic = MOCK_LICENSES[key.trim().toUpperCase()];
+  if (!lic) return { valid: false };
+  const issue = new Date();
+  const expiry = new Date(issue);
+  expiry.setMonth(expiry.getMonth() + lic.validity_months);
+  return { valid: true, issue_date: issue.toISOString(), expiry_date: expiry.toISOString(), validity_months: lic.validity_months };
+};
+
+// ─── Root App ─────────────────────────────────────────────────────────────────
+function App() {
+  const [license, setLicense] = useState(() => storage.get("lic"));
+  const [profiles, setProfiles] = useState(() => storage.get("profiles") || []);
+  const [invoices, setInvoices] = useState(() => storage.get("invoices") || []);
+  const [page, setPage] = useState("dashboard");
+  const [activeProfile, setActiveProfile] = useState(() => storage.get("activeProfile") || null);
+
+  const isExpired = license && new Date(license.expiry_date) < new Date();
+
+  const saveLicense = (l) => { setLicense(l); storage.set("lic", l); };
+  const saveProfiles = (p) => { setProfiles(p); storage.set("profiles", p); };
+  const saveInvoices = (inv) => { setInvoices(inv); storage.set("invoices", inv); };
+  const saveActiveProfile = (p) => { setActiveProfile(p); storage.set("activeProfile", p); };
+
+  if (!license || isExpired) {
+    return <LicensePage onActivate={saveLicense} expired={isExpired} />;
+  }
+
+  if (profiles.length === 0) {
+    return (
+      <div className="app">
+        <Topbar license={license} profile={activeProfile} />
+        <div className="layout">
+          <div className="main">
+            <ProfilesPage profiles={profiles} license={license} onSave={saveProfiles}
+              onSelect={(p) => { saveActiveProfile(p); setPage("dashboard"); }}
+              activeProfile={activeProfile} firstTime={true} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="app">
+      <Topbar license={license} profile={activeProfile} />
+      <div className="layout">
+        <Sidebar page={page} setPage={setPage} />
+        <div className="main">
+          {page === "dashboard" && <Dashboard invoices={invoices} profile={activeProfile} setPage={setPage} />}
+          {page === "new-invoice" && (
+            <InvoiceForm profile={activeProfile} profiles={profiles}
+              onSave={(inv) => { saveInvoices([...invoices, inv]); setPage("invoices"); }}
+              onCancel={() => setPage("invoices")} />
+          )}
+          {page === "invoices" && (
+            <InvoiceList invoices={invoices} profiles={profiles}
+              onNew={() => setPage("new-invoice")}
+              onDelete={(id) => saveInvoices(invoices.filter(i => i.id !== id))} />
+          )}
+          {page === "profiles" && (
+            <ProfilesPage profiles={profiles} license={license}
+              onSave={saveProfiles} onSelect={saveActiveProfile} activeProfile={activeProfile} />
+          )}
+          {page === "license" && (
+            <LicenseInfo license={license} onRenew={() => { storage.remove("lic"); setLicense(null); }} />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Topbar ───────────────────────────────────────────────────────────────────
+function Topbar({ license, profile }) {
+  const daysLeft = license ? Math.ceil((new Date(license.expiry_date) - new Date()) / 86400000) : 0;
+  const badgeCls = `badge${daysLeft > 30 ? "" : daysLeft > 7 ? " warn" : " danger"}`;
+  return (
+    <div className="topbar">
+      <span className="topbar-brand">InvoiceApp</span>
+      <div className="topbar-right">
+        {profile && <span style={{color:"#ccc",fontSize:".8rem"}}>📄 {profile.name}</span>}
+        <span className={badgeCls}>License: {daysLeft}d left</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Sidebar ──────────────────────────────────────────────────────────────────
+function Sidebar({ page, setPage }) {
+  const items = [
+    { id: "dashboard", icon: "⬛", label: "Dashboard" },
+    { id: "invoices", icon: "📄", label: "Invoices" },
+    { id: "new-invoice", icon: "✚", label: "New Invoice" },
+    { id: "profiles", icon: "🏢", label: "Company Profiles" },
+    { id: "license", icon: "🔑", label: "License" },
+  ];
+  return (
+    <div className="sidebar">
+      <div className="nav-section">Main Menu</div>
+      {items.map(it => (
+        <div key={it.id} className={`nav-item${page === it.id ? " active" : ""}`} onClick={() => setPage(it.id)}>
+          <span className="nav-icon">{it.icon}</span> {it.label}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── License Page ─────────────────────────────────────────────────────────────
+function LicensePage({ onActivate, expired }) {
+  const [key, setKey] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  const submit = async () => {
+    if (!key.trim()) return setError("Please enter a license key.");
+    setLoading(true); setError(""); setSuccess("");
+    const res = await verifyLicense(key);
+    setLoading(false);
+    if (!res.valid) return setError("Invalid license key. Please contact Sparsh company.");
+    setSuccess(`License activated! Valid until ${formatDate(res.expiry_date)}`);
+    setTimeout(() => onActivate(res), 800);
+  };
+
+  return (
+    <div className="license-page">
+      <div className="license-box">
+        <div className="license-brand">InvoiceApp</div>
+        <div className="license-tagline">Professional Invoice Management</div>
+        {expired && (
+          <div className="error-msg" style={{marginBottom:16}}>
+            ⚠️ Your license has expired. Please enter a new license key to continue.
+          </div>
+        )}
+        <div className="form-group">
+          <label className="form-label">License Key</label>
+          <input className="form-input" style={{fontFamily:"var(--font-mono)",letterSpacing:".05em"}}
+            value={key} onChange={e => setKey(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && submit()}
+            placeholder="SPARSH-XXXX-XXXX" />
+        </div>
+        <button className="btn btn-gold" style={{width:"100%",marginTop:16,justifyContent:"center"}}
+          onClick={submit} disabled={loading}>
+          {loading ? <><span className="spinner" /> Verifying…</> : "Activate License"}
+        </button>
+        {error && <div className="error-msg">{error}</div>}
+        {success && <div className="success-msg">✓ {success}</div>}
+        <div className="license-divider" />
+        <div style={{fontSize:".78rem",color:"var(--muted)",lineHeight:1.7}}>
+          <b>Available plans:</b> 3 months · 6 months · 12 months<br/>
+          Contact Sparsh company to purchase a license key.<br/>
+          <span style={{fontFamily:"var(--font-mono)",fontSize:".72rem"}}>
+            Demo keys: SPARSH-3M-001 / SPARSH-6M-001 / DEMO-KEY-2024
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── License Info ─────────────────────────────────────────────────────────────
+function LicenseInfo({ license, onRenew }) {
+  const daysLeft = Math.ceil((new Date(license.expiry_date) - new Date()) / 86400000);
+  return (
+    <div>
+      <div className="page-title">License Details</div>
+      <div className="page-sub">Your current software license information</div>
+      <div className="card" style={{maxWidth:480}}>
+        <div className="form-grid">
+          {[["Issue Date",formatDate(license.issue_date)],["Expiry Date",formatDate(license.expiry_date)],
+            ["Validity",`${license.validity_months} months`],["Days Remaining",`${daysLeft} days`]].map(([l,v]) => (
+            <div key={l}>
+              <div className="form-label">{l}</div>
+              <div className="text-mono" style={{marginTop:4}}>{v}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{marginTop:24}}>
+          <div className="form-label" style={{marginBottom:8}}>Status</div>
+          <span className={`pill ${daysLeft > 30 ? "pill-green" : daysLeft > 7 ? "pill-yellow" : "pill-red"}`}>
+            {daysLeft > 0 ? `Active — ${daysLeft} days left` : "Expired"}
+          </span>
+        </div>
+        <div style={{marginTop:24,borderTop:"1px solid var(--border)",paddingTop:20}}>
+          <button className="btn btn-outline btn-sm" onClick={onRenew}>🔄 Enter New License Key</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Profiles Page ────────────────────────────────────────────────────────────
+function ProfilesPage({ profiles, license, onSave, onSelect, activeProfile, firstTime }) {
+  const MAX = 3;
+  const [form, setForm] = useState({ name:"", address:"", email:"", phone:"", tax_number:"", terms_conditions:"", id:null });
+  const [editing, setEditing] = useState(null);
+  const [adding, setAdding] = useState(!!firstTime);
+
+  const f = (k) => (v) => setForm(p => ({...p, [k]:v}));
+
+  const save = () => {
+    if (!form.name) return;
+    let updated;
+    if (editing !== null) {
+      updated = profiles.map((p,i) => i === editing ? {...form} : p);
+    } else {
+      updated = [...profiles, {...form, id: Date.now()}];
+    }
+    onSave(updated);
+    setAdding(false); setEditing(null);
+    setForm({ name:"", address:"", email:"", phone:"", tax_number:"", terms_conditions:"", id:null });
+    if (firstTime && updated.length > 0) onSelect(updated[0]);
+  };
+
+  const startEdit = (p, i) => { setForm(p); setEditing(i); setAdding(true); };
+
+  return (
+    <div>
+      <div className="page-title">Company Profiles</div>
+      <div className="page-sub">Manage your seller company profiles (max {MAX})</div>
+      {!adding && profiles.length < MAX && (
+        <button className="btn btn-primary mb-4" onClick={() => setAdding(true)}>+ Add Profile</button>
+      )}
+      {adding && (
+        <div className="card mb-4">
+          <div className="card-title">{editing !== null ? "Edit Profile" : "New Company Profile"}</div>
+          <div className="form-grid">
+            <div className="form-group">
+              <label className="form-label">Company Name *</label>
+              <input className="form-input" value={form.name} onChange={e => f("name")(e.target.value)} placeholder="Acme Pvt Ltd" />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Email</label>
+              <input className="form-input" type="email" value={form.email} onChange={e => f("email")(e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Phone</label>
+              <input className="form-input" value={form.phone} onChange={e => f("phone")(e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Tax / GST Number</label>
+              <input className="form-input" value={form.tax_number} onChange={e => f("tax_number")(e.target.value)} />
+            </div>
+            <div className="form-group form-full">
+              <label className="form-label">Address</label>
+              <textarea className="form-input" rows={2} value={form.address} onChange={e => f("address")(e.target.value)} />
+            </div>
+            <div className="form-group form-full">
+              <label className="form-label">Default Terms & Conditions</label>
+              <textarea className="form-input" rows={3} value={form.terms_conditions}
+                placeholder="Payment due within 30 days..." onChange={e => f("terms_conditions")(e.target.value)} />
+            </div>
+          </div>
+          <div className="flex-row mt-4">
+            <button className="btn btn-primary" onClick={save}>Save Profile</button>
+            <button className="btn btn-outline" onClick={() => { setAdding(false); setEditing(null); }}>Cancel</button>
+          </div>
+        </div>
+      )}
+      <div className="profile-grid">
+        {profiles.map((p,i) => (
+          <div key={i} className={`profile-card${activeProfile && activeProfile.id === p.id ? " selected" : ""}`}
+            onClick={() => onSelect(p)}>
+            <div className="profile-name">{p.name}</div>
+            <div className="profile-email">{p.email}</div>
+            <div style={{fontSize:".78rem",color:"var(--muted)",marginTop:6}}>{p.phone}</div>
+            {p.tax_number && <div style={{fontSize:".72rem",fontFamily:"var(--font-mono)",marginTop:4,color:"var(--muted)"}}>{p.tax_number}</div>}
+            <div className="flex-row mt-4 gap-8">
+              <button className="btn btn-outline btn-sm" onClick={e => { e.stopPropagation(); startEdit(p,i); }}>Edit</button>
+              {activeProfile && activeProfile.id === p.id && <span className="pill pill-green">Active</span>}
+            </div>
+          </div>
+        ))}
+        {profiles.length === 0 && <div className="text-muted">No profiles yet. Create one above.</div>}
+      </div>
+    </div>
+  );
+}
+
+// ─── Dashboard ────────────────────────────────────────────────────────────────
+function Dashboard({ invoices, profile, setPage }) {
+  const total = invoices.reduce((s,i) => s + (i.final_amount||0), 0);
+  const thisMonth = invoices.filter(i => new Date(i.invoice_date).getMonth() === new Date().getMonth());
+  const monthTotal = thisMonth.reduce((s,i) => s + (i.final_amount||0), 0);
+
+  return (
+    <div>
+      <div className="page-title">Dashboard</div>
+      <div className="page-sub">Welcome back{profile ? `, ${profile.name}` : ""}.</div>
+      <div className="stats-row">
+        {[{val:invoices.length,lbl:"Total Invoices"},{val:thisMonth.length,lbl:"This Month"},
+          {val:`₹${total.toLocaleString("en-IN")}`,lbl:"Total Revenue"},{val:`₹${monthTotal.toLocaleString("en-IN")}`,lbl:"Month Revenue"}
+        ].map(s => (
+          <div className="stat-card" key={s.lbl}>
+            <div className="stat-val">{s.val}</div>
+            <div className="stat-lbl">{s.lbl}</div>
+          </div>
+        ))}
+      </div>
+      <div className="flex-row mb-4">
+        <button className="btn btn-primary" onClick={() => setPage("new-invoice")}>+ New Invoice</button>
+        <button className="btn btn-outline" onClick={() => setPage("invoices")}>View All Invoices</button>
+      </div>
+      {invoices.length > 0 && (
+        <div className="card">
+          <div className="card-title">Recent Invoices</div>
+          <div className="table-wrap">
+            <table>
+              <thead><tr><th>Invoice #</th><th>Client</th><th>Date</th><th>Amount</th></tr></thead>
+              <tbody>
+                {[...invoices].slice(-5).reverse().map(inv => (
+                  <tr key={inv.id}>
+                    <td className="text-mono text-gold">#{String(inv.id).slice(-6)}</td>
+                    <td><b>{inv.client_name}</b></td>
+                    <td>{formatDate(inv.invoice_date)}</td>
+                    <td><b>₹{inv.final_amount?.toLocaleString("en-IN")}</b></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Invoice Form ─────────────────────────────────────────────────────────────
+function InvoiceForm({ profile, profiles, onSave, onCancel }) {
+  const defIdx = profiles.findIndex(p => profile && p.id === profile.id);
+  const [sellerIdx, setSellerIdx] = useState(defIdx >= 0 ? defIdx : 0);
+  const seller = profiles[sellerIdx] || profiles[0];
+  const [client, setClient] = useState({ name:"", address:"", phone:"" });
+  const [items, setItems] = useState([{ id:1, name:"", qty:1, price:0, tax:0 }]);
+  const [date, setDate] = useState(today());
+  const [preview, setPreview] = useState(false);
+
+  const cf = (k) => (v) => setClient(p => ({...p, [k]:v}));
+  const updateItem = (id,k,v) => setItems(its => its.map(i => i.id===id ? {...i,[k]:v} : i));
+  const addItem = () => setItems(its => [...its, {id:Date.now(), name:"", qty:1, price:0, tax:0}]);
+  const removeItem = (id) => setItems(its => its.filter(i => i.id !== id));
+
+  const subtotal = items.reduce((s,i) => s + (Number(i.qty)*Number(i.price)), 0);
+  const taxTotal = items.reduce((s,i) => s + (Number(i.qty)*Number(i.price)*Number(i.tax)/100), 0);
+  const finalAmt = subtotal + taxTotal;
+
+  const buildInvoice = () => ({
+    id: Date.now(), invoice_date: date, client_name: client.name,
+    client_address: client.address, client_phone: client.phone,
+    items, total_amount: subtotal, tax_total: taxTotal,
+    final_amount: finalAmt, seller_profile: seller,
+  });
+
+  if (preview) {
+    const inv = buildInvoice();
+    return (
+      <div>
+        <div className="flex-row mb-4 no-print">
+          <button className="btn btn-outline" onClick={() => setPreview(false)}>← Back to Edit</button>
+          <button className="btn btn-gold" onClick={() => window.print()}>🖨 Print</button>
+          <button className="btn btn-primary" onClick={() => onSave(inv)}>💾 Save Invoice</button>
+        </div>
+        <InvoicePreview invoice={inv} />
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="page-title">New Invoice</div>
+      <div className="page-sub">Fill in the details to generate an invoice.</div>
+
+      <div className="card mb-4">
+        <div className="card-title">Seller (From)</div>
+        <div className="form-group" style={{marginBottom:12}}>
+          <label className="form-label">Company Profile</label>
+          <select className="form-input" value={sellerIdx} onChange={e => setSellerIdx(Number(e.target.value))}>
+            {profiles.map((p,i) => <option key={i} value={i}>{p.name}</option>)}
+          </select>
+        </div>
+        {seller && (
+          <div style={{fontSize:".82rem",color:"var(--muted)",lineHeight:1.8}}>
+            {seller.address && <div>{seller.address}</div>}
+            {seller.email && <div>{seller.email}</div>}
+            {seller.phone && <div>{seller.phone}</div>}
+            {seller.tax_number && <div className="text-mono">{seller.tax_number}</div>}
+          </div>
+        )}
+      </div>
+
+      <div className="card mb-4">
+        <div className="card-title">Billed To (Client)</div>
+        <div className="form-grid">
+          <div className="form-group">
+            <label className="form-label">Client / Company Name</label>
+            <input className="form-input" value={client.name} onChange={e => cf("name")(e.target.value)} placeholder="Client Name" />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Phone</label>
+            <input className="form-input" value={client.phone} onChange={e => cf("phone")(e.target.value)} />
+          </div>
+          <div className="form-group form-full">
+            <label className="form-label">Address</label>
+            <textarea className="form-input" rows={2} value={client.address} onChange={e => cf("address")(e.target.value)} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Invoice Date</label>
+            <input className="form-input" type="date" value={date} onChange={e => setDate(e.target.value)} />
+          </div>
+        </div>
+      </div>
+
+      <div className="card mb-4">
+        <div className="flex-between mb-4">
+          <div className="card-title" style={{margin:0}}>Invoice Items</div>
+          <button className="btn btn-outline btn-sm" onClick={addItem}>+ Add Item</button>
+        </div>
+        <div style={{overflowX:"auto"}}>
+          <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr 32px",gap:8,marginBottom:8}}>
+            {["Item Name","Qty","Price (₹)","Tax %","Total",""].map(h => (
+              <div key={h} className="form-label">{h}</div>
+            ))}
+          </div>
+          {items.map(item => (
+            <div key={item.id} style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr 32px",gap:8,marginBottom:8,alignItems:"center"}}>
+              <input className="form-input" value={item.name} onChange={e => updateItem(item.id,"name",e.target.value)} placeholder="Item description" />
+              <input className="form-input" type="number" min="1" value={item.qty} onChange={e => updateItem(item.id,"qty",e.target.value)} />
+              <input className="form-input" type="number" min="0" value={item.price} onChange={e => updateItem(item.id,"price",e.target.value)} />
+              <input className="form-input" type="number" min="0" max="100" value={item.tax} onChange={e => updateItem(item.id,"tax",e.target.value)} />
+              <div className="text-mono" style={{fontSize:".85rem",textAlign:"right",paddingRight:4}}>
+                ₹{(Number(item.qty)*Number(item.price)*(1+Number(item.tax)/100)).toFixed(2)}
+              </div>
+              <button style={{background:"none",border:"none",color:"var(--rust)",cursor:"pointer",fontSize:"1rem",padding:0}}
+                onClick={() => removeItem(item.id)}>✕</button>
+            </div>
+          ))}
+          <div style={{borderTop:"2px solid var(--border)",marginTop:12,paddingTop:12,textAlign:"right"}}>
+            <div className="text-muted">Subtotal: <b className="text-mono">₹{subtotal.toFixed(2)}</b></div>
+            <div className="text-muted">Tax: <b className="text-mono">₹{taxTotal.toFixed(2)}</b></div>
+            <div style={{fontSize:"1.1rem",fontFamily:"var(--font-display)",marginTop:4}}>
+              Total: <span className="text-gold">₹{finalAmt.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex-row">
+        <button className="btn btn-gold" onClick={() => setPreview(true)}>👁 Preview Invoice</button>
+        <button className="btn btn-primary" onClick={() => onSave(buildInvoice())}>💾 Save Invoice</button>
+        <button className="btn btn-outline" onClick={onCancel}>Cancel</button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Invoice List ─────────────────────────────────────────────────────────────
+function InvoiceList({ invoices, profiles, onNew, onDelete }) {
+  const [viewing, setViewing] = useState(null);
+
+  if (viewing) {
+    return (
+      <div>
+        <div className="flex-row mb-4 no-print">
+          <button className="btn btn-outline" onClick={() => setViewing(null)}>← Back</button>
+          <button className="btn btn-gold" onClick={() => window.print()}>🖨 Print</button>
+        </div>
+        <InvoicePreview invoice={viewing} />
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex-between mb-4">
+        <div>
+          <div className="page-title">All Invoices</div>
+          <div className="page-sub">{invoices.length} invoice{invoices.length !== 1 ? "s" : ""} total</div>
+        </div>
+        <button className="btn btn-primary" onClick={onNew}>+ New Invoice</button>
+      </div>
+      <div className="card">
+        {invoices.length === 0 ? (
+          <div style={{padding:"32px 0",textAlign:"center"}}>
+            <div style={{fontSize:"2rem",marginBottom:8}}>📄</div>
+            <div className="text-muted">No invoices yet. Create your first one!</div>
+          </div>
+        ) : (
+          <div className="table-wrap">
+            <table>
+              <thead><tr><th>Invoice #</th><th>Client</th><th>Date</th><th>Subtotal</th><th>Tax</th><th>Total</th><th>Actions</th></tr></thead>
+              <tbody>
+                {[...invoices].reverse().map(inv => (
+                  <tr key={inv.id}>
+                    <td><span className="text-mono text-gold">#{String(inv.id).slice(-6)}</span></td>
+                    <td><b>{inv.client_name}</b><br/><span className="text-muted" style={{fontSize:".75rem"}}>{inv.client_phone}</span></td>
+                    <td>{formatDate(inv.invoice_date)}</td>
+                    <td className="text-mono">₹{Number(inv.total_amount).toFixed(2)}</td>
+                    <td className="text-mono">₹{Number(inv.tax_total).toFixed(2)}</td>
+                    <td><b className="text-mono">₹{Number(inv.final_amount).toFixed(2)}</b></td>
+                    <td>
+                      <div className="flex-row gap-8">
+                        <button className="btn btn-outline btn-sm" onClick={() => setViewing(inv)}>View</button>
+                        <button className="btn btn-sm" style={{background:"#fee2e2",color:"var(--rust)",border:"none"}}
+                          onClick={() => onDelete(inv.id)}>Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Invoice Preview ──────────────────────────────────────────────────────────
+function InvoicePreview({ invoice }) {
+  const s = invoice.seller_profile || {};
+  const num = `INV-${String(invoice.id).slice(-6)}`;
+
+  return (
+    <div className="invoice-preview">
+      <div className="inv-header">
+        <div>
+          <div className="inv-logo">{s.name || "Company"}</div>
+          <div style={{fontSize:".82rem",color:"var(--muted)",marginTop:6,lineHeight:1.8}}>
+            {s.address && <div>{s.address}</div>}
+            {s.email && <div>{s.email}</div>}
+            {s.phone && <div>{s.phone}</div>}
+            {s.tax_number && <div style={{fontFamily:"var(--font-mono)"}}>GST: {s.tax_number}</div>}
+          </div>
+        </div>
+        <div style={{textAlign:"right"}}>
+          <div style={{fontFamily:"var(--font-display)",fontSize:"2rem",color:"var(--border)",letterSpacing:".15em",textTransform:"uppercase"}}>INVOICE</div>
+          <div style={{fontFamily:"var(--font-mono)",fontSize:".85rem",marginTop:8}}>
+            <div><b>{num}</b></div>
+            <div style={{color:"var(--muted)"}}>Date: {formatDate(invoice.invoice_date)}</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="inv-parties">
+        <div>
+          <div className="inv-party-lbl">Bill From</div>
+          <div className="inv-party-name">{s.name}</div>
+          <div style={{fontSize:".82rem",color:"var(--muted)",lineHeight:1.8,marginTop:4}}>
+            {s.address}<br/>{s.email}<br/>{s.phone}
+          </div>
+        </div>
+        <div>
+          <div className="inv-party-lbl">Bill To</div>
+          <div className="inv-party-name">{invoice.client_name}</div>
+          <div style={{fontSize:".82rem",color:"var(--muted)",lineHeight:1.8,marginTop:4}}>
+            {invoice.client_address}<br/>{invoice.client_phone}
+          </div>
+        </div>
+      </div>
+
+      <div className="table-wrap">
+        <table className="inv-items-table">
+          <thead><tr><th>#</th><th>Item</th><th>Qty</th><th>Price</th><th>Tax %</th><th>Total</th></tr></thead>
+          <tbody>
+            {(invoice.items||[]).map((item,i) => (
+              <tr key={item.id||i}>
+                <td>{i+1}</td>
+                <td>{item.name}</td>
+                <td>{item.qty}</td>
+                <td className="text-mono">₹{Number(item.price).toFixed(2)}</td>
+                <td>{item.tax}%</td>
+                <td className="text-mono"><b>₹{(Number(item.qty)*Number(item.price)*(1+Number(item.tax)/100)).toFixed(2)}</b></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="inv-total-section">
+        <table className="inv-totals">
+          <tbody>
+            <tr><td>Subtotal</td><td>₹{Number(invoice.total_amount).toFixed(2)}</td></tr>
+            <tr><td>Tax</td><td>₹{Number(invoice.tax_total).toFixed(2)}</td></tr>
+            <tr style={{borderTop:"2px solid var(--border)"}}>
+              <td className="inv-grand">Grand Total</td>
+              <td className="inv-grand">₹{Number(invoice.final_amount).toFixed(2)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {s.terms_conditions && (
+        <div className="inv-terms">
+          <b>Terms & Conditions</b>
+          <p style={{marginTop:6}}>{s.terms_conditions}</p>
+        </div>
+      )}
+      <div style={{marginTop:24,borderTop:"1px solid var(--border)",paddingTop:12,textAlign:"center",fontSize:".75rem",color:"var(--muted)"}}>
+        Thank you for your business — Generated by InvoiceApp
+      </div>
+    </div>
+  );
+}
+
+// ─── Mount ────────────────────────────────────────────────────────────────────
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
+</script>
+</body>
+</html>
